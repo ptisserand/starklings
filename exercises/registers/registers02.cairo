@@ -1,7 +1,6 @@
 %lang starknet
 from starkware.cairo.common.math_cmp import is_le
 
-# I AM NOT DONE
 
 # TODO
 # Rewrite those functions with a high level syntax
@@ -12,15 +11,20 @@ func sum_array(array_len : felt, array : felt*) -> (sum : felt):
     # [ap] = 0; ap++
     # call rec_sum_array
     # ret
+    let sum: felt = rec_sum_array(array_len, array, 0)
+    return (sum)
 end
 
 func rec_sum_array(array_len : felt, array : felt*, sum : felt) -> (sum : felt):
     # jmp continue if [fp - 5] != 0
-
+    if array_len == 0:
+        return (sum)
+    end
     # stop:
     # [ap] = [fp - 3]; ap++
     # jmp done
-
+    let cumul: felt = [array] + sum
+    return rec_sum_array(array_len - 1, array + 1, cumul)
     # continue:
     # [ap] = [[fp - 4]]; ap++
     # [ap] = [fp - 5] - 1; ap++
@@ -30,6 +34,8 @@ func rec_sum_array(array_len : felt, array : felt*, sum : felt) -> (sum : felt):
 
     # done:
     # ret
+    let a: felt = 3
+    return (a)
 end
 
 # TODO
@@ -37,12 +43,26 @@ end
 # It's possible to do it with only registers, labels and conditional jump. No reference or localvar
 @external
 func max{range_check_ptr}(a : felt, b : felt) -> (max : felt):
-    # let (res) = is_le(a, b)
-    # if res == 1:
-    #     return (b)
-    # else:
-    #     return (a)
-    # end
+    # push on stack
+    [ap] = [fp - 5]; ap++ # range_check_ptr
+    [ap] = [fp - 4]; ap++ # a
+    [ap] = [fp - 3]; ap++ # b
+
+    call is_le
+    # return updated range_check_ptr and max
+    [ap] = [ap - 2]; ap++
+    jmp b_is_more if [ap - 2] != 0 # ap has been incremented
+
+    stop:
+    [ap] = [fp - 4]; ap++
+    jmp done
+
+    b_is_more:
+    [ap] = [fp - 3]; ap++
+    jmp done
+
+    done:
+    ret
 end
 
 #########
